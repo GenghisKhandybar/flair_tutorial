@@ -1,0 +1,16 @@
+---
+title: "main_tutorial"
+author: "William Medwid"
+date: "11/24/2020"
+output: html_document
+---
+
+## Welcome to the Flair team!
+
+Here, we'll look at all of the more difficult aspects of how Flair works.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
