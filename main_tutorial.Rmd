@@ -14,3 +14,89 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
+# Concept 1: S3 Classes
+
+If you're not yet familiar with the general concepts of OOP (Object Oriented Programming), research those first.
+
+S3 classes are a basic form of class, allowing for three main features: Encapsulation, Inheritance, and Polymorphism.
+
+Encapsulation - By wrapping up code in neat classes, the code becomes much more usable.
+
+Inheritance - Allows code to be easily shared among objects.
+
+Polymorphism - Allows functions to take multiple types of objects as input and output.
+
+Many basic functions make use of S3 classes without the user ever needing to know. For example, you might think mean() is just a single function that can take nearly any class as input. However, we can run the following code to see that there are separate functions making up mean().
+
+```{r}
+methods(mean)
+```
+
+Each instance of mean takes the form mean.class, where class is the type class of data we're taking the mean of. An R object can have multiple classes, defined by a vector of class attributes. Generic functions like mean are very simple, like mean:
+
+```{r}
+mean <- function (x, ...) {
+   UseMethod("mean", x)
+}
+```
+
+UseMethod will look through each class x has, and if there's a method with the name mean.class, it calls that function.
+
+Here are a few examples of how to assign a class attribute to a variable:
+
+```{r}
+x <- 1
+attr(x, "class") <- "foo"
+x
+```
+
+Or, to do the same in one line:
+
+```{r}
+x <- structure(1, class = "foo")
+x
+```
+
+The recommended way to do this, though is to assign class(x)
+
+```{r}
+x <- 1
+class(x) <- "foo"
+x
+```
+
+Since x has the class foo, any generic function we assign will be treated as the generic for x. This simple achievement makes coding in R much easier because otherwise we would have to memorize a different function name, like mean.numeric or mean.date for every class. 
+
+```{r}
+mean.foo <- function(x){
+  return(x+10)
+}
+
+mean(x)
+```
+
+## With_flair
+
+S3 classes are used in Flair to make the with_flair class. This class has two methods: knit_print.with_flair, and print.with_flair. With_flair objects are generated from the decorate() function (the exact code for how they get generated is in decorate_chunk and decorate_code, which will be covered later.)
+
+print.with_flair: If the editor isn't open, it returns nothing. Otherwise, it generates a temporary html file, modifies the input variable, and then calls viewer() so the html file shows  up as a sample in the viewer window. The code below follows the same structure, without the steps that modify the contents of x.
+
+```{r, creating_directory} 
+tempDir <- tempfile()
+dir.create(tempDir)
+htmlFile <- file.path(tempDir, "index.html")
+```
+
+```{r, writing_file}
+x = c("Testing ", "testing </br>", "testing some more", "and even </br> more testing")
+writeLines(x, htmlFile)
+```
+
+```{r, viewing_file}
+#Documents can't be knitted if they contain these, so I've commented them out. Run them in Rstudio to see how they're meant to work.
+
+#viewer <- getOption("viewer")
+#viewer(htmlFile)
+```
+
+
