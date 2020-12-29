@@ -79,24 +79,46 @@ mean(x)
 
 S3 classes are used in Flair to make the with_flair class. This class has two methods: knit_print.with_flair, and print.with_flair. With_flair objects are generated from the decorate() function (the exact code for how they get generated is in decorate_chunk and decorate_code, which will be covered later.)
 
-print.with_flair: If the editor isn't open, it returns nothing. Otherwise, it generates a temporary html file, modifies the input variable, and then calls viewer() so the html file shows  up as a sample in the viewer window. The code below follows the same structure, without the steps that modify the contents of x.
+print.with_flair: If the editor isn't open, it returns nothing. Otherwise, it generates a temporary html file, modifies the input variable, and then calls viewer() so the HTML file shows  up as a sample in the viewer window. The code below follows the same structure, without the steps that modify the contents of x.
 
+First, creating a temporary directory
 ```{r, creating_directory} 
 tempDir <- tempfile()
 dir.create(tempDir)
 htmlFile <- file.path(tempDir, "index.html")
 ```
 
+Then, modifying (or in this case, establishing) the input variable x. 
 ```{r, writing_file}
-x = c("Testing ", "testing </br>", "testing some more", "and even </br> more testing")
+x = c("Testing ", "testing", "testing some more", "and even more testing")
+```
+
+</br> is the newline symbol in HTML, so one of the modifications made is to add it to the end of every line of code. The other modification made is to apply prep_source, which makes slight alterations depending on the document output type. It looks like prep_source isn't complete for all document types yet. 
+```{r}
+x <- stringr::str_c(unlist(x), collapse = "</br>")
+```
+
+Then, we write the lines of x to the HTML file.
+```{r}
 writeLines(x, htmlFile)
 ```
 
+And finally, create a viewer to display the temporary HTML file.
 ```{r, viewing_file}
-#Documents can't be knitted if they contain these, so I've commented them out. Run them in Rstudio to see how they're meant to work.
+editorIsOpen <- tryCatch({ #This part ensures the code won't run when knitting, but will run in Rstudio.
+    rstudioapi::getSourceEditorContext()
+    TRUE
+  }, error = function(e) FALSE)
 
-#viewer <- getOption("viewer")
-#viewer(htmlFile)
+if(!editorIsOpen){
+  viewer <- getOption("viewer")
+  viewer(htmlFile)
+}
 ```
+
+Remember that for this function, x is a variable with the class with_flair, which has (essentially) the structure of a list of lines of code, similar to the list of strings used in the example above. In print.with_flair, the lines aren't strings, but have the type "source" (at least, any that aren't of type "source" are removed).
+
+
+To understand knit_print.with_flair, we'll first have to get to know the normal knit_print function.
 
 
