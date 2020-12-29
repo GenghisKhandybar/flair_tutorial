@@ -13,6 +13,10 @@ Here, we'll look at all of the more difficult aspects of how Flair works.
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r dependancies}
+library(tidyverse)
+```
+
 
 # Concept 1: S3 Classes
 
@@ -34,7 +38,7 @@ methods(mean)
 
 Each instance of mean takes the form mean.class, where class is the type class of data we're taking the mean of. An R object can have multiple classes, defined by a vector of class attributes. Generic functions like mean are very simple, like mean:
 
-```{r}
+```{r mean_code}
 mean <- function (x, ...) {
    UseMethod("mean", x)
 }
@@ -44,7 +48,7 @@ UseMethod will look through each class x has, and if there's a method with the n
 
 Here are a few examples of how to assign a class attribute to a variable:
 
-```{r}
+```{r class_assignment_attr}
 x <- 1
 attr(x, "class") <- "foo"
 x
@@ -82,14 +86,14 @@ S3 classes are used in Flair to make the with_flair class. This class has two me
 print.with_flair: If the editor isn't open, it returns nothing. Otherwise, it generates a temporary html file, modifies the input variable, and then calls viewer() so the HTML file shows  up as a sample in the viewer window. The code below follows the same structure, without the steps that modify the contents of x.
 
 First, creating a temporary directory
-```{r, creating_directory} 
+```{r creating_directory} 
 tempDir <- tempfile()
 dir.create(tempDir)
 htmlFile <- file.path(tempDir, "index.html")
 ```
 
 Then, modifying (or in this case, establishing) the input variable x. 
-```{r, writing_file}
+```{r writing_file}
 x = c("Testing ", "testing", "testing some more", "and even more testing")
 ```
 
@@ -104,7 +108,7 @@ writeLines(x, htmlFile)
 ```
 
 And finally, create a viewer to display the temporary HTML file.
-```{r, viewing_file}
+```{r viewing_file}
 editorIsOpen <- tryCatch({ #This part ensures the code won't run when knitting, but will run in Rstudio.
     rstudioapi::getSourceEditorContext()
     TRUE
@@ -121,4 +125,43 @@ Remember that for this function, x is a variable with the class with_flair, whic
 
 To understand knit_print.with_flair, we'll first have to get to know the normal knit_print function.
 
+## knit_print
+
+(insert knit_print tutorial here)
+
+## decorate
+
+Decorate is the main function someone who uses flair will use. The user will either input a string containing code they'd like to decorate, or the name of a code chunk they'd like to decorate. The code will only run if they decorate an existing code chunk. Depending on whether the input appears to be code or the name of a chunk, decorate will return the result of either decorate_chunk or decorate_code.
+
+## decorate_chunk
+
+This function will decorate an existing chunk of code. The with_flair class has the same chunk options as any other chunk in R markdown, so decorate_chunk includes options to set any chunk option. After checking for errors, this function starts by extracting the contents of the whole R markdown file, selecting the contents, which are a list of every line in the RMD document. It then uses the function code_from_editor() (defined below in the same file) to extract the text from the desired chunk. The code is stored in the variable my_code as a single string, with.
+
+
+
+Let's take an example code block:
+```{r knit_child_test}
+x = "Beep "
+y = "boop"
+str_c(x, y)
+```
+If we were to use decorate_chunk on this chunk, the code_from_editor() function would give the following string:
+```{r}
+my_code = "x = \"Beep \"\ny = \"boop\"\nstr_c(x, y)"
+my_code
+```
+
+Then the function paste0 is used to add \```{r} and \``` to the start and end of the block of code, formatting the string a functional block of code.
+```{r}
+my_code_fenced <- paste0("```{r}\n", my_code, "\n```")
+my_code_fenced
+```
+
+Then, knit_child adds its own formatting, as well as including the output.
+```{r}
+knitted <- knitr::knit_child(text = my_code_fenced)
+knitted
+```
+
+Then the knitted string is turned to a list with its sources separated from its output. Lastly, knitted is given the class with_flair and returned. Now that the user has an object with the class with_flair, the custom print.with_flair and knit_print.with_flair will apply to it.
 
