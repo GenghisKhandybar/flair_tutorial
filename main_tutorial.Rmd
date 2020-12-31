@@ -11,10 +11,12 @@ Here, we'll look at all of the more difficult aspects of how Flair works.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+options(knitr.duplicate.label = "allow")
 ```
 
 ```{r dependancies}
 library(tidyverse)
+library(flair)
 ```
 
 
@@ -32,7 +34,7 @@ Polymorphism - Allows functions to take multiple types of objects as input and o
 
 Many basic functions make use of S3 classes without the user ever needing to know. For example, you might think mean() is just a single function that can take nearly any class as input. However, we can run the following code to see that there are separate functions making up mean().
 
-```{r}
+```{r mean_methods}
 methods(mean)
 ```
 
@@ -56,14 +58,14 @@ x
 
 Or, to do the same in one line:
 
-```{r}
+```{r class_assignment_inline}
 x <- structure(1, class = "foo")
 x
 ```
 
 The recommended way to do this, though is to assign class(x)
 
-```{r}
+```{r class_assignment_recommended}
 x <- 1
 class(x) <- "foo"
 x
@@ -71,7 +73,7 @@ x
 
 Since x has the class foo, any generic function we assign will be treated as the generic for x. This simple achievement makes coding in R much easier because otherwise we would have to memorize a different function name, like mean.numeric or mean.date for every class. 
 
-```{r}
+```{r foo_mean}
 mean.foo <- function(x){
   return(x+10)
 }
@@ -83,7 +85,9 @@ mean(x)
 
 S3 classes are used in Flair to make the with_flair class. This class has two methods: knit_print.with_flair, and print.with_flair. With_flair objects are generated from the decorate() function (the exact code for how they get generated is in decorate_chunk and decorate_code, which will be covered later.)
 
-print.with_flair: If the editor isn't open, it returns nothing. Otherwise, it generates a temporary html file, modifies the input variable, and then calls viewer() so the HTML file shows  up as a sample in the viewer window. The code below follows the same structure, without the steps that modify the contents of x.
+# print.with_flair: 
+
+If the editor isn't open, it returns nothing. Otherwise, it generates a temporary html file, modifies the input variable, and then calls viewer() so the HTML file shows  up as a sample in the viewer window. The code below follows the same structure, without the steps that modify the contents of x.
 
 First, creating a temporary directory
 ```{r creating_directory} 
@@ -98,12 +102,12 @@ x = c("Testing ", "testing", "testing some more", "and even more testing")
 ```
 
 </br> is the newline symbol in HTML, so one of the modifications made is to add it to the end of every line of code. The other modification made is to apply prep_source, which makes slight alterations depending on the document output type. It looks like prep_source isn't complete for all document types yet. 
-```{r}
+```{r add_linebreaks}
 x <- stringr::str_c(unlist(x), collapse = "</br>")
 ```
 
 Then, we write the lines of x to the HTML file.
-```{r}
+```{r write_lines}
 writeLines(x, htmlFile)
 ```
 
@@ -120,7 +124,7 @@ if(!editorIsOpen){
 }
 ```
 
-Remember that for this function, x is a variable with the class with_flair, which has (essentially) the structure of a list of lines of code, similar to the list of strings used in the example above. In print.with_flair, the lines aren't strings, but have the type "source" (at least, any that aren't of type "source" are removed).
+Remember that for this function, x is a variable with the class with_flair, which has (essentially) the structure of a list of lines of code, similar to the list of strings used in the example above. In print.with_flair, the lines aren't strings, but have the type "source" if they're part of the code being annotated (the output part of the with_flair object will not have type "source" so with_flair will skip them).
 
 
 To understand knit_print.with_flair, we'll first have to get to know the normal knit_print function.
@@ -140,28 +144,59 @@ This function will decorate an existing chunk of code. The with_flair class has 
 
 
 Let's take an example code block:
-```{r knit_child_test}
+
+```{r sample_chunk}
 x = "Beep "
 y = "boop"
 str_c(x, y)
 ```
 If we were to use decorate_chunk on this chunk, the code_from_editor() function would give the following string:
-```{r}
+```{r my_code_test}
 my_code = "x = \"Beep \"\ny = \"boop\"\nstr_c(x, y)"
 my_code
 ```
 
 Then the function paste0 is used to add \```{r} and \``` to the start and end of the block of code, formatting the string a functional block of code.
-```{r}
+```{r my_code_fenced_test}
 my_code_fenced <- paste0("```{r}\n", my_code, "\n```")
 my_code_fenced
 ```
 
-Then, knit_child adds its own formatting, as well as including the output.
-```{r}
-knitted <- knitr::knit_child(text = my_code_fenced)
+Then, knit adds its own formatting, as well as including the output. There's a different process using knit_child if the code is not running live in the editor, but we'll look at this for now (knit_child yields a similar output, but without the ``` fencing).
+
+```{r knit_test}
+knitted <- knitr::knit(text = my_code_fenced, quiet = TRUE)
 knitted
 ```
 
+Then, we use the src_to_list(), defined below decorate_chunk, to separate this long string into pieces, and label the code with the class source. For brevity, I'll just leave comments explaining each line rather than showing each output. Note that the function split_sandwiches can be found in utils-split within the Flair package. Feel free to run each line on its own to get an idea of how src_to_list works.
+
+```{r src_to_list_line_by_line_eval}
+knitted <- split_sandwiches(knitted, "```r?") %>% as.list() #Splits the code into separate chunks along ``` fencing. 
+before_code <- which(knitted == "```r") #Finds which element starts the code chunk. In this case (maybe all cases?) it's the second.
+
+knitted[before_code + 1] <- stringr::str_trim(knitted[before_code + 1]) #Trims the newlines off the end of the code string (code starts after the ```r)
+
+knitted[before_code + 1] <- purrr::map(knitted[before_code + 1],
+                                       function(x) structure(list(src = x), class = "source")) #Gives the code the class source.
+knitted <- knitted[-c(before_code, before_code + 2)] #Removes the ```r before the source text and the ``` after the code
+knitted
+```
+
+We nearly have the final class of with_flair. As a last step, knitted is given the class with_flair and the original text is stored as an additional attribute. Now that knitted is a with_flair object, we can't print it out like a string anymore, since the print.with_flair function displays it in its own way so that flair can be added. Run the final line in this chunk to see how with_flair objects are displayed. (In knitted form, this will appear as if the test chunk were just copied, which is how Flair is meant to work.)
+```{r final_steps_knitting}
+attr(knitted, "class") <- "with_flair"
+
+attr(knitted, "orig_code_text") <- my_code
+knitted
+```
+
+
 Then the knitted string is turned to a list with its sources separated from its output. Lastly, knitted is given the class with_flair and returned. Now that the user has an object with the class with_flair, the custom print.with_flair and knit_print.with_flair will apply to it.
+
+For good measure, we can see that directly running decorate_chunk will yield the same result.
+```{r src_to_list_line_by_line}
+test_decorate_chunk <- decorate_chunk("sample_chunk")
+test_decorate_chunk
+```
 
