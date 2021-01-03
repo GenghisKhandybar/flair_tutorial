@@ -7,11 +7,10 @@ output: html_document
 
 ## Welcome to the Flair team!
 
-Here, we'll look at all of the more difficult aspects of how Flair works.
+Here, we'll look at all of the more difficult aspects of how Flair works. You can knit this and read it, or, for more active involvement, follow along running individual chunks in RStudio.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-options(knitr.duplicate.label = "allow")
 ```
 
 ```{r dependancies}
@@ -81,9 +80,16 @@ mean.foo <- function(x){
 mean(x)
 ```
 
+Other attributes can also be added to an S3 object, similar to how the class attribute can be changed.
+```{r}
+attr(x, "name") = "Onebert"
+x
+```
+
+
 ## With_flair
 
-S3 classes are used in Flair to make the with_flair class. This class has two methods: knit_print.with_flair, and print.with_flair. With_flair objects are generated from the decorate() function (the exact code for how they get generated is in decorate_chunk and decorate_code, which will be covered later.)
+S3 classes are used in Flair to make the with_flair class. A with_flair object will contain code in text form which the user can make visual modifications to, as well as the output from that code. A with_flair object gets displayed as a chunk of code, including its output, with the option to add additional flair. This class has two methods: knit_print.with_flair, and print.with_flair. With_flair objects are generated from the decorate() function (the exact code for how they get generated is in decorate_chunk and decorate_code, which will be covered later.)
 
 # print.with_flair: 
 
@@ -202,11 +208,18 @@ test_decorate_chunk
 
 ## decorate_code
 
-Decorate_code operates in much the same way as decorate_chunk, where the user copies code into the function. Decorate_code will even evaluate the code.
+Decorate_code operates in much the same way as decorate_chunk, where the user copies code into the function. Decorate_code will even evaluate the code. As we can see here, when knitted, decorate_chunk will make it look exactly like the code it's running were in its own chunk. Storing the output from decorate_code in a variable will allow flair to be added.
 
 ```{r}
 decorate_code('x = "Beep "
 y = "boop"
 str_c(x, y)')
+```
+
+## Mask
+
+(Work in progress)
+```{r}
+?fixed
 ```
 
