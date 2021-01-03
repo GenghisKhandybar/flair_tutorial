@@ -125,7 +125,7 @@ editorIsOpen <- tryCatch({ #This part ensures the code won't run when knitting, 
   }, error = function(e) FALSE)
 
 if(!editorIsOpen){
-  viewer <- getOption("viewer")
+  viewer <- getOption("viewer") #These are the 2 lines that create and use the temporary viewer
   viewer(htmlFile)
 }
 ```

@@ -463,7 +463,7 @@ htmlFile &lt;- file.path(tempDir, &quot;index.html&quot;)</code></pre>
   }, error = function(e) FALSE)
 
 if(!editorIsOpen){
-  viewer &lt;- getOption(&quot;viewer&quot;)
+  viewer &lt;- getOption(&quot;viewer&quot;) #These are the 2 lines that create and use the temporary viewer
   viewer(htmlFile)
 }</code></pre>
 <p>Remember that for this function, x is a variable with the class with_flair, which has (essentially) the structure of a list of lines of code, similar to the list of strings used in the example above. In print.with_flair, the lines aren’t strings, but have the type “source” if they’re part of the code being annotated (the output part of the with_flair object will not have type “source” so with_flair will skip them).</p>
@@ -558,9 +558,10 @@ str_c(x, y)&#39;)</code></pre>
 </div>
 <div id="mask" class="section level2">
 <h2>Mask</h2>
+<p>Mask has a complex internal structure to achieve the aim of blanking out part of a string. This could be used, for example, to create fill inn the blank type questions. The function can be used on strings as well as with_flair objects, though the output will have HTML tagged blank space.</p>
 <pre class="r"><code>test_chunk &lt;- decorate_chunk(&quot;sample_chunk&quot;)
-mask(test_chunk, &quot;boop&quot;)</code></pre>
-<pre class="prettyprint"><code>x = &quot;Beep &quot;<br>y = &quot;<span style="background-color:#ffff7f">    </span>&quot;<br>str_c(x, y)</code></pre>
+mask(test_chunk, &quot;str_c&quot;)</code></pre>
+<pre class="prettyprint"><code>x = &quot;Beep &quot;<br>y = &quot;boop&quot;<br><span style="background-color:#ffff7f">     </span>(x, y)</code></pre>
 <pre><code>
 ## [1] &quot;Beep boop&quot;
 </code></pre>
