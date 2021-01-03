@@ -81,7 +81,7 @@ mean(x)
 ```
 
 Other attributes can also be added to an S3 object, similar to how the class attribute can be changed.
-```{r}
+```{r attribute}
 attr(x, "name") = "Onebert"
 x
 ```
@@ -210,7 +210,7 @@ test_decorate_chunk
 
 Decorate_code operates in much the same way as decorate_chunk, where the user copies code into the function. Decorate_code will even evaluate the code. As we can see here, when knitted, decorate_chunk will make it look exactly like the code it's running were in its own chunk. Storing the output from decorate_code in a variable will allow flair to be added.
 
-```{r}
+```{r dec_Code}
 decorate_code('x = "Beep "
 y = "boop"
 str_c(x, y)')
@@ -218,8 +218,10 @@ str_c(x, y)')
 
 ## Mask
 
-(Work in progress)
-```{r}
-?fixed
+Mask has a complex internal structure to achieve the aim of blanking out part of a string. This could be used, for example, to create fill inn the blank type questions. The function can be used on strings as well as with_flair objects, though the output will have HTML tagged blank space.
+
+```{r mask_demo_code}
+test_chunk <- decorate_chunk("sample_chunk")
+mask(test_chunk, "str_c")
 ```
 
