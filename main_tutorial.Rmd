@@ -200,3 +200,13 @@ test_decorate_chunk <- decorate_chunk("sample_chunk")
 test_decorate_chunk
 ```
 
+## decorate_code
+
+Decorate_code operates in much the same way as decorate_chunk, where the user copies code into the function. Decorate_code will even evaluate the code.
+
+```{r}
+decorate_code('x = "Beep "
+y = "boop"
+str_c(x, y)')
+```
+
