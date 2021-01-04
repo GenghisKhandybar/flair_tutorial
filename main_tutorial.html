@@ -556,6 +556,33 @@ str_c(x, y)&#39;)</code></pre>
 ## [1] &quot;Beep boop&quot;
 </code></pre>
 </div>
+<div id="flair" class="section level2">
+<h2>Flair</h2>
+<p>Flair is the primary function of this package. The decorate() functions prepare the code/chunk (see the section for decorate()) for decoration and then flair() is used to format the desired code elements etc.</p>
+<p>We pipe the output of decorate() into flair() and pass in arguments as appropriate. We can further modify it by passing it through more flair functions.</p>
+<p>Note: If we are decorating a chunk the decorate and flair pipeline must be in a seperate chunk.</p>
+<p>The main flair() function is a wrapper for the S3 generic function flair_rx() which serves as the base. The shortcut functions flair_args(), flair_funs() and flair_input_vals() [these decorate the object mentioned in the function name] are also built on top of flair_rx().</p>
+<p>Note: the main flair() function passes a fixed() string into flair_rx whereas the shortcut functions pass a regular expression.</p>
+<p>The other building-block function is flair_quick(). The flair_rx.default() method calls this function.</p>
+<p>The S3 generic flair_all() function has two methods - a default and with_flair method. These methods are built on the flair_quick() function</p>
+<p>flair_rx() has two methods - a default method and a with_flair() method. This function matches a string (based on fixed input or a regular expression) in the decorated ‘with_flair’ object and applies the desired formatting. Then the with_flair object (which now contains both the decorated source code and the output) is printed with knit_print.with_flair.</p>
+<div id="internal-structure-of-flair_rx" class="section level3">
+<h3>Internal structure of flair_rx()</h3>
+<p>flair_rx.with_flair() is the primary method that any user of this package will us.</p>
+<p>This method finds the source strings in the input and then maps flair_rx() to each and every such string.</p>
+<p>Since each individual string is not a with_flair() object function call uses the default method.</p>
+<p>The flair_rx.default() method applies a series of string operations: it extracts the html tags and content between the tags. Then it maps flair_quick() to the strings conditionally.</p>
+<p>The output is then unlisted, collapsed and returned.</p>
+<p>Then the output from the flair_rx() call in flair_rx.with_flair is structured, the class attribute of the object is set to ‘with_flair’ and the object is returned.</p>
+</div>
+<div id="flair_quick" class="section level3">
+<h3>flair_quick()</h3>
+<p>flair_quick is the function that actually performs the formatting.</p>
+<p>If there are no tag in the source string it inserts tags with txt_tag()</p>
+<p>If there is no additional argument for type odf formatting it formats the background using the default color</p>
+<p>if there are specific styles passed into the function, it applies those styles with the general txt_style() function and returns the formatted string.</p>
+</div>
+</div>
 <div id="mask" class="section level2">
 <h2>Mask</h2>
 <p>Mask has a complex internal structure to achieve the aim of blanking out part of a string. This could be used, for example, to create fill inn the blank type questions. The function can be used on strings as well as with_flair objects, though the output will have HTML tagged blank space.</p>
