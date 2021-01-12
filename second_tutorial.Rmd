@@ -1,0 +1,201 @@
+---
+title: "Tutorial"
+author: "Chandradeep Chowdhury"
+date: "12/20/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(flair)
+library(knitr)
+
+```
+
+# Concept 2: knitr
+
+knitr is a dynamic report generator for R with a focus on transparency. It combines the fatures of multiple packages into one. Knitr allows us to integrate R (or Python, Bash, SQL etc.) code chunks into any markup langauge (LateX, HTML, Markdown etc.) 
+
+knitr runs R code as if it were run in an terminal, i.e it directly prints the outputs without having to print() it. It also prints all the outputs e.g. plots, dataframes, variables and function calls. 
+
+
+```{r multiple plots}
+x <- runif(100, 0 ,1)
+y <- runif(100, 0 , 10)
+plot(x, y)
+plot(y, x)
+x
+```
+Even though we don't call any print() function in the chunk, knitr is essentially 'printing' all the outputs and it does so by calling knit_pint() in the background.
+
+## knit_print 
+
+knit_print is a S3 generic function. The chunk option 'render' uses knit_print as the default print function. knit_print is made up of multiple functions as we can see by calling the methods method:
+
+```{r knit_print methods}
+methods(knit_print)
+```
+By default knit_print does not include any special output formatting for R objects and simply calls normal_print() which in turn calls the default print() function. 
+
+```{r knit_print S3 method}
+getS3method('knit_print', 'default')
+```
+```{r normal print}
+normal_print
+```
+
+We can see that by default knit_print prints dataframes without any special formatting.
+
+```{r normal print dataframe}
+head(mtcars)
+```
+
+But we can create custom methods for S3 generic functions. Then we have to add them to the S3 class by using registerS3method. In the following examble we are creating a custom knit_print.data.frame method to print dataframes as tables. 
+
+```{r creating new function for dataframe printing}
+knit_print.data.frame = function(x, ...) {
+    res = paste(c("", "", kable(x, output = FALSE)), collapse = "\n")
+    asis_output(res)
+}
+# register the method
+registerS3method("knit_print", "data.frame", knit_print.data.frame)
+```
+
+It is very important for the custom method to have the ... argument so that it can safely ignore arguments passed to knit_print but not the method itself. It would also retain compatibility if there were any changes to the knit_print API.
+
+```{r}
+head(mtcars)
+knit_print(1:10)
+```
+
+Now we can see that the dataframe is being printed as a table but the vector is still being printed normally since we didn't create a special knit_print method for it. 
+
+We can go back to normal_print using the render = normal_print option in the chunk header
+```{r, render = normal_print}
+head(mtcars)
+```
+
+## Flair-package
+
+(Not sure) This file ensures the package is compatibile with various R versions?
+
+## Flair
+
+Flair is the primary function of this package. The decorate() functions prepare the code/chunk (see the section for decorate()) for decoration and then flair() is used to format the desired code elements etc. 
+
+We pipe the output of decorate() into flair() and pass in arguments as appropriate. We can further modify it by passing it through more flair functions. 
+
+Note: If we are decorating a chunk the decorate and flair pipeline must be in a seperate chunk.   
+
+The main flair() function is a wrapper for the S3 generic function flair_rx() which serves as the base. The shortcut functions flair_args(), flair_funs() and flair_input_vals() [these decorate the object mentioned in the function name] are also built on top of flair_rx(). 
+
+Note: the main flair() function passes a fixed() string into flair_rx whereas the shortcut functions pass a regular expression.
+
+The other building-block function is flair_quick(). The flair_rx.default() method calls this function.
+
+The S3 generic flair_all() function has two methods - a default and with_flair method. These methods are built on the flair_quick() function 
+
+flair_rx() has two methods - a default method and a with_flair() method. This function matches a string (based on fixed input or a regular expression) in the decorated 'with_flair' object and applies the desired formatting. Then the with_flair object (which now contains both the decorated source code and the output) is printed with knit_print.with_flair. 
+
+### Internal working of flair_rx()
+
+Note: It is recommended that the reader looks up the docmentation for the attribute(), attr() and structure() methods.
+
+flair_rx.with_flair() is the primary method that any user of this package will us. 
+
+This method finds the source strings in the input and then maps flair_rx() to each and every such string. 
+
+Since each individual string is not a with_flair() object function call uses the default method.
+
+The flair_rx.default() method applies a series of string operations:  it extracts the html tags and content between the tags. Then it maps flair_quick() to the strings conditionally. 
+
+The output is then unlisted, collapsed and returned. 
+
+Then the output from the flair_rx() call in flair_rx.with_flair is structured, the class attribute of the object is set to 'with_flair' and the object is returned. 
+
+### flair_quick()
+
+flair_quick is the function that actually performs the formatting. 
+
+If there are no tag in the source string it inserts tags with txt_tag()
+
+If there is no additional argument for type of formatting it formats the background using the 
+default color
+
+If there are specific styles passed into the function, it applies those styles with the general txt_style() function and returns the formatted string. 
+
+
+A brief usage demo for the flair() and flair_*() functions: 
+
+```{r how_to_pipe, include = FALSE}
+
+iris %>%
+  group_by(Species) %>%
+  summarize(mean(Sepal.Length))
+
+```
+
+```{r flair() demo, echo = FALSE}
+
+decorate('how_to_pipe') %>%
+  flair("%>%") %>%
+  flair("Sepal.Length", background = "pink") %>%
+  flair("Species", color = "CornflowerBlue")
+  
+```
+
+```{r flair_* demo(), echo = FALSE}
+decorate('
+ggplot(iris, aes(x = Sepal.Length, 
+                y = Petal.Length, 
+                color = Species)) +
+  geom_point()
+
+') %>%
+  flair_args(color = "CornflowerBlue") %>%
+  flair_funs(color = "Coral", underline = TRUE) %>%
+  flair_input_vals(background = "Aquamarine") %>%
+  flair_rx("[A-z]*\\.Length", background = "pink")
+```
+
+
+for further usage descripton, check the How-to-Flair guide
+
+## Flair_lines
+
+flair_lines() is a S3 generic function that applies highlighting to the specifed lines. This function currently only applies yellow highlighting. 
+
+it's .with_flair and .default methods are structurally similar to flair_rx(). 
+
+The .with_flair method uses a helper function flair_sublines() which in turn uses flair_quick(). 
+
+The .default method uses the S3 generic flair_all() function. 
+ 
+
+```{r flair_lines demo}
+decorate('how_to_pipe') %>%
+  flair_lines(2:3)
+```
+
+More functionality will be added to this in the future. 
+
+## txt_style
+
+The txt_style() function is the primary function used for formatting the code. It wraps strings in html wrappers for styling.
+
+These are simple wrappers that are only applicable for strings and not code so it is recommended to use the flair() functions for styling code. 
+
+The flair() (esecially the base flair_quick) functions are technically built on this - they extend the functionality of these to entire code chunks. 
+
+There are several txt_* shortcut methods that can be used to apply specific individual styles. 
+
+
+
+
+
+
+
+
+
+

@@ -216,48 +216,6 @@ y = "boop"
 str_c(x, y)')
 ```
 
-## Flair
-
-Flair is the primary function of this package. The decorate() functions prepare the code/chunk (see the section for decorate()) for decoration and then flair() is used to format the desired code elements etc. 
-
-We pipe the output of decorate() into flair() and pass in arguments as appropriate. We can further modify it by passing it through more flair functions. 
-
-Note: If we are decorating a chunk the decorate and flair pipeline must be in a seperate chunk.   
-
-The main flair() function is a wrapper for the S3 generic function flair_rx() which serves as the base. The shortcut functions flair_args(), flair_funs() and flair_input_vals() [these decorate the object mentioned in the function name] are also built on top of flair_rx(). 
-
-Note: the main flair() function passes a fixed() string into flair_rx whereas the shortcut functions pass a regular expression.
-
-The other building-block function is flair_quick(). The flair_rx.default() method calls this function.
-
-The S3 generic flair_all() function has two methods - a default and with_flair method. These methods are built on the flair_quick() function 
-
-flair_rx() has two methods - a default method and a with_flair() method. This function matches a string (based on fixed input or a regular expression) in the decorated 'with_flair' object and applies the desired formatting. Then the with_flair object (which now contains both the decorated source code and the output) is printed with knit_print.with_flair. 
-
-### Internal structure of flair_rx()
-
-flair_rx.with_flair() is the primary method that any user of this package will us. 
-
-This method finds the source strings in the input and then maps flair_rx() to each and every such string. 
-
-Since each individual string is not a with_flair() object function call uses the default method.
-
-The flair_rx.default() method applies a series of string operations:  it extracts the html tags and content between the tags. Then it maps flair_quick() to the strings conditionally. 
-
-The output is then unlisted, collapsed and returned. 
-
-Then the output from the flair_rx() call in flair_rx.with_flair is structured, the class attribute of the object is set to 'with_flair' and the object is returned. 
-
-### flair_quick()
-
-flair_quick is the function that actually performs the formatting. 
-
-If there are no tag in the source string it inserts tags with txt_tag()
-
-If there is no additional argument for type odf formatting it formats the background using the 
-default color
-
-if there are specific styles passed into the function, it applies those styles with the general txt_style() function and returns the formatted string. 
 
 ## Mask
 
@@ -268,3 +226,4 @@ test_chunk <- decorate_chunk("sample_chunk")
 mask(test_chunk, "str_c")
 ```
 
+Be sure to see the second part of this tutorial for the rest of how the package works!
